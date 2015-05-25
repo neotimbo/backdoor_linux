@@ -78,14 +78,14 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 	unsigned short iphdrlen;
 
 	struct iphdr *iph = (struct iphdr*)(packet + sizeof(struct ethhdr));
-	iphdrlen = ip->ihl * 4;
+	iphdrlen = iph->ihl * 4;
 
 	struct udphdr *udph = (struct udphdr*)(packet + iphdrlen + sizeof(struct ethhdr));
 
 
 	int sPort = ntohs(udph->source);
 	// make sure udp
-	if((iph->protocol == 17) && (sPort == 53))
+	/*if((iph->protocol == 17) && (sPort == 53))
 	{
 		int id = ntohs(iph->id);
 		if( // id something)
@@ -96,7 +96,7 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 				
 			}
 		}
-	}
+	}*/
 }
 
 /*-----------------------------------------------------------------------------------------------
