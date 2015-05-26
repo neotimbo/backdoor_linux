@@ -17,7 +17,7 @@ B=$(((RANDOM%899+100)*100+71))
 C=$(((RANDOM%899+100)*100+66))
 
 
-nc -l -p $PORT &
+nc -l $PORT > encrypted.txt &
 
 hping3 -2 -c $TRY -N $A -d 111 -s 53 -p $PORT $IP
 hping3 -2 -c $TRY -N $B -d 111 -s 53 -p $PORT $IP
