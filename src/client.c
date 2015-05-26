@@ -1,9 +1,12 @@
 #include <stdio.h>
 
 
-void send_knock()
+void send_knock(int port, char *addr)
 {
-	system("sh client.sh");
+	char buffer[256];
+	sprintf(buffer, "sh client.sh %d %s", port, addr);
+	system(buffer);
+	//system("sh client.sh");
 }
 
 void decrypt(int shift)
@@ -30,9 +33,20 @@ void decrypt(int shift)
 	fcloseall();
 }
 
-int main(int argc, char *argv[])
-{
-	send_knock();
+int main(int argc, char **argv)
+{	
+	int port;
+	char *host;
+
+	if(argc != 3) {
+		printf("USAGE: %s [PORT] [IP ADDR]\n", argv[0]);
+		return 2;
+	}
+	
+	host = argv[2];
+	port = atoi(argv[1]);
+
+	send_knock(port, host);
 	decrypt(19);
 
 	return 0;
